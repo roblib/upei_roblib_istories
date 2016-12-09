@@ -24,7 +24,7 @@ function upei_roblib_istories_menu() {
 }
 
 /**
- * Iterates over a list of objects and displays each object TN with a link search of objects in the same geographic location.
+ * Iterates over a list of objects and displays each objects TN with a link that searches for the objects title.
  *
  * TODO Currently we are using a dismax query we may want to change this to query certain fields only.  May also want to
  * add paging (currently our source collections are limited in size but this may change)
