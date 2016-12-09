@@ -1,0 +1,74 @@
+<?php
+
+/**
+ * @file
+ * Implementation of robertson library istories customizations.
+ */
+
+
+/**
+ * Implements hook_menu().
+ */
+function upei_roblib_istories_menu() {
+
+  $items['istories/communities/%islandora_object'] = array(
+    'title' => 'Island Stories Communities',
+    'description' => 'Entry point for the Island Stories Community Page',
+    'page callback' => 'upei_roblib_istories_community',
+    'page arguments' => array(2),
+    'type' => MENU_NORMAL_ITEM,
+    'access callback' => 'islandora_object_access_callback',
+    'access arguments' => array(ISLANDORA_VIEW_OBJECTS, 2),
+  );
+  return $items;
+}
+
+/**
+ * Iterates over a list of objects and displays each object TN with a link search of objects in the same geographic location.
+ *
+ * TODO Currently we are using a dismax query we may want to change this to query certain fields only.  May also want to
+ * add paging (currently our source collections are limited in size but this may change)
+ *
+ * @param string $object
+ *   The pid of an object
+ * @return array
+ *   A renderable array that mimics an islandora collection
+ *
+ */
+function upei_roblib_istories_community($object) {
+  $object = isset($object) ? $object : 'islandora:root';
+  $collection = islandora_object_load($object);
+
+  $objects = islandora_basic_collection_get_member_objects($collection, 0, -1, 'view');
+  $children = array();
+  $options = array('attributes' => array('class' => 'thumbnail'), 'html' => TRUE, 'query' => array('type' => 'dismax'));
+  foreach ($objects[1] as $object) {
+    $pid = $object['object']['value'];
+    $title = $object['title']['value'];
+    // We don't want the word collection as we are listing communities
+    $title = trim(str_replace('Collection', '', $title));
+    $img = theme_image(array('path' => 'islandora/object/' . $pid . '/datastream/TN/view',
+      'alt' => $title, 'title' => $title, 'attributes' => array()));
+
+    $path = 'islandora/search/' . '("' . urlencode($title) . '")';
+
+    $children[$pid] = array(
+      '#prefix' => '<dl class="flex-box islandora-basic-collection-object">',
+      '#markup' => '<dt class="islandora-basic-collection-thumb">' . l($img, $path, $options) . '</dt>
+      <dd class="flex-title islandora-basic-collection-caption">' . l($title, $path, $options) . '</dd>',
+      '#suffix' => '</dl>',
+    );
+
+  }
+
+  $output = array(
+    'upei_roblib_istories_output' => array(
+      t('elements') => array($children),
+      '#prefix' => '<div class="islandora islandora-basic-collection"><div class="flex-box islandora-basic-collection-grid clearfix flex-boxes">',
+      '#suffix' => '</div></div>',
+    ),
+  );
+  drupal_alter('upei_roblib_istories', $output);
+  return $output;
+}
+
